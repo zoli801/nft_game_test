@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Элитная Слот-Рулетка Казино</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="background-lights">
+    <div class="light-beam"></div>
+    <div class="light-beam"></div>
+    <div class="light-beam"></div>
+</div>
+
+<div class="loader" id="loader">
+    <div class="loader-content">
+        <div class="spinner"></div>
+        <p>Загрузка рулетки...</p>
+    </div>
+</div>
+
+<div class="win-modal" id="winModal">
+    <div class="win-content">
+        <div class="win-title" id="winTitle">ПОБЕДА!</div>
+        <div class="win-prize" id="winPrize"></div>
+        <div class="nft-image" id="nftImage"></div>
+    </div>
+</div>
+
+<div class="particles" id="particles"></div>
+
+<div class="container">
+    <header>
+        <h1>🎰 ЭЛИТНАЯ РУЛЕТКА КАЗИНО</h1>
+        <p>Крутите слоты и выигрывайте призы!</p>
+    </header>
+
+    <div class="coins-display">
+        <div class="coins-icon">🪙</div>
+        <div class="coins-amount">Ваши звёзды: <span id="coinsCount">0</span></div>
+    </div>
+
+    <div class="slots-container">
+        <div class="pointer">
+            <svg viewBox="0 0 24 24">
+                <path d="M12,2 L22,22 L2,22 Z"></path>
+            </svg>
+        </div>
+        <div class="center-line"></div>
+        <div class="slots-track" id="slotsTrack"></div>
+    </div>
+
+    <button class="spin-btn" id="spinBtn">🎡 КРУТИТЬ РУЛЕТКУ (100 🪙)</button>
+
+    <footer>
+        <p>Удачи! Ваш выигрыш будет автоматически зачислен на баланс</p>
+    </footer>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
