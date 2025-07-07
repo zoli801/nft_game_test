@@ -1,4 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Инициализация Telegram WebApp
+    Telegram.WebApp.ready();
+
     const loader = document.getElementById('loader');
     const slotsTrack = document.getElementById('slotsTrack');
     const spinBtn = document.getElementById('spinBtn');
@@ -8,61 +11,121 @@ document.addEventListener('DOMContentLoaded', () => {
     const winTitle = document.getElementById('winTitle');
     const nftImage = document.getElementById('nftImage');
     const coinsCount = document.getElementById('coinsCount');
+    const betButtons = document.querySelectorAll('.bet-btn');
 
-    // Получаем параметры из URL
+    // Парсим параметры URL
     const urlParams = new URLSearchParams(window.location.search);
     const userId = urlParams.get('user_id');
     const username = urlParams.get('username');
-    const initialBalance = urlParams.get('balance');
+    let coins = parseInt(urlParams.get('balance')) || 0;
+    coinsCount.textContent = coins;
 
-    // Текущий баланс
-    let coins = parseInt(initialBalance) || 0;
+    // Текущая ставка
+    let currentBet = 100;
     let isSpinning = false;
     let isModalOpen = false;
-    let lastUsedNFTs = [];
+    let lastUsedNFTs = {};
     let winSlotElement = null;
     let animationFrameId = null;
     let winModalTimeout = null;
-    let idleAnimationId = null;
 
-    // Обновляем отображение баланса
-    coinsCount.textContent = coins;
+    // NFT изображения для разных ставок
+    const nftImages = {
+        100: [
+            "https://picsum.photos/id/10/200/200",
+            "https://picsum.photos/id/11/200/200",
+            "https://picsum.photos/id/12/200/200",
+            "https://picsum.photos/id/13/200/200",
+            "https://picsum.photos/id/14/200/200",
+            "https://picsum.photos/id/15/200/200",
+            "https://picsum.photos/id/16/200/200",
+            "https://picsum.photos/id/17/200/200"
+        ],
+        1000: [
+            "https://picsum.photos/id/18/200/200",
+            "https://picsum.photos/id/19/200/200",
+            "https://picsum.photos/id/20/200/200",
+            "https://picsum.photos/id/21/200/200",
+            "https://picsum.photos/id/22/200/200",
+            "https://picsum.photos/id/23/200/200",
+            "https://picsum.photos/id/24/200/200",
+            "https://picsum.photos/id/25/200/200"
+        ],
+        10000: [
+            "https://picsum.photos/id/26/200/200",
+            "https://picsum.photos/id/27/200/200",
+            "https://picsum.photos/id/28/200/200",
+            "https://picsum.photos/id/29/200/200",
+            "https://picsum.photos/id/30/200/200",
+            "https://picsum.photos/id/31/200/200",
+            "https://picsum.photos/id/32/200/200",
+            "https://picsum.photos/id/33/200/200"
+        ]
+    };
 
-    // NFT изображения
-    const nftImages = [
-        "https://picsum.photos/id/10/200/200",
-        "https://picsum.photos/id/11/200/200",
-        "https://picsum.photos/id/12/200/200",
-        "https://picsum.photos/id/13/200/200",
-        "https://picsum.photos/id/14/200/200",
-        "https://picsum.photos/id/15/200/200",
-        "https://picsum.photos/id/16/200/200",
-        "https://picsum.photos/id/17/200/200"
-    ];
+    // Секторы рулетки для разных ставок
+    const sectors = {
+        100: [
+            { value: "15", type: "coins" },
+            { value: "25", type: "coins" },
+            { value: "50", type: "coins" },
+            { value: "100", type: "coins" },
+            { value: "NFT", type: "nft" },
+            { value: "NFT", type: "nft" },
+            { value: "NFT", type: "nft" }
+        ],
+        1000: [
+            { value: "15", type: "coins" },
+            { value: "25", type: "coins" },
+            { value: "50", type: "coins" },
+            { value: "100", type: "coins" },
+            { value: "NFT", type: "nft" },
+            { value: "NFT", type: "nft" },
+            { value: "NFT", type: "nft" }
+        ],
+        10000: [
+            { value: "15", type: "coins" },
+            { value: "25", type: "coins" },
+            { value: "50", type: "coins" },
+            { value: "100", type: "coins" },
+            { value: "NFT", type: "nft" },
+            { value: "NFT", type: "nft" },
+            { value: "NFT", type: "nft" }
+        ]
+    };
 
-    // Секторы рулетки
-    const sectors = [
-        { value: "15", type: "coins" },
-        { value: "25", type: "coins" },
-        { value: "50", type: "coins" },
-        { value: "100", type: "coins" },
-        { value: "NFT", type: "nft" },
-        { value: "NFT", type: "nft" },
-        { value: "NFT", type: "n极" }
-    ];
+    // Показать загрузчик
+    loader.style.display = 'flex';
+
+    // Функция для перемешивания массива (алгоритм Фишера-Йейтса)
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
 
     // Создать рулетку
     function createSlots() {
         slotsTrack.innerHTML = '';
 
-        // Создаем копию секторов и перемешиваем их
-        const shuffledSectors = [...sectors].sort(() => Math.random() - 0.5);
+        // Создаем копию секторов для текущей ставки и перемешиваем их
+        const shuffledSectors = shuffleArray([...sectors[currentBet]]);
         const slotSets = 40;
+
+        if (!lastUsedNFTs[currentBet]) {
+            lastUsedNFTs[currentBet] = [];
+        }
 
         for (let i = 0; i < slotSets; i++) {
             shuffledSectors.forEach((sector, sectorIndex) => {
                 const slot = document.createElement('div');
                 slot.className = 'slot';
+                slot.dataset.index = sectorIndex;
+                slot.dataset.set = i;
+
+                // Сохраняем данные сектора
                 slot.dataset.value = sector.value;
                 slot.dataset.type = sector.type;
 
@@ -76,18 +139,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     let attempts = 0;
 
                     do {
-                        randomImage = nftImages[Math.floor(Math.random() * nftImages.length)];
+                        randomImage = nftImages[currentBet][Math.floor(Math.random() * nftImages[currentBet].length)];
                         attempts++;
 
                         if (attempts > 50) {
-                            lastUsedNFTs = [];
+                            lastUsedNFTs[currentBet] = [];
                             break;
                         }
-                    } while (lastUsedNFTs.includes(randomImage));
+                    } while (lastUsedNFTs[currentBet].includes(randomImage));
 
-                    lastUsedNFTs.push(randomImage);
-                    if (lastUsedNFTs.length > 10) {
-                        lastUsedNFTs.shift();
+                    lastUsedNFTs[currentBet].push(randomImage);
+                    if (lastUsedNFTs[currentBet].length > 10) {
+                        lastUsedNFTs[currentBet].shift();
                     }
 
                     img.src = randomImage;
@@ -106,35 +169,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Запустить фоновое вращение
     function startIdleAnimation() {
-        let start = null;
-        const duration = 60000; // 60 секунд
-        const distance = slotsTrack.scrollWidth / 2;
-
-        function step(timestamp) {
-            if (!start) start = timestamp;
-            const progress = timestamp - start;
-            const percent = Math.min(progress / duration, 1);
-            const newPosition = percent * distance;
-
-            slotsTrack.style.transform = `translateX(-${newPosition}px)`;
-
-            if (percent < 1) {
-                idleAnimationId = requestAnimationFrame(step);
-            } else {
-                // Перезапускаем анимацию
-                startIdleAnimation();
-            }
-        }
-
-        idleAnimationId = requestAnimationFrame(step);
+        slotsTrack.style.animation = 'none';
+        setTimeout(() => {
+            slotsTrack.style.animation = 'idleSpin 60s linear infinite';
+        }, 10);
     }
 
     // Остановить фоновое вращение
     function stopIdleAnimation() {
-        if (idleAnimationId) {
-            cancelAnimationFrame(idleAnimationId);
-            idleAnimationId = null;
-        }
+        slotsTrack.style.animation = 'none';
     }
 
     // Сбросить стили всех слотов
@@ -153,6 +196,29 @@ document.addEventListener('DOMContentLoaded', () => {
             winSlotElement = null;
         }
     }
+
+    // Обработчики выбора ставки
+    betButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (isSpinning || isModalOpen) return;
+
+            betButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentBet = parseInt(btn.dataset.bet);
+
+            createSlots();
+            setTimeout(startIdleAnimation, 100);
+        });
+    });
+
+    // Инициализация рулетки
+    createSlots();
+
+    // Скрыть загрузчик
+    setTimeout(() => {
+        loader.style.display = 'none';
+        startIdleAnimation();
+    }, 800);
 
     // Создать эффект частиц
     function createParticles(x, y, count, color) {
@@ -199,6 +265,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         winModal.style.display = 'flex';
 
+        // Отправляем результат в Telegram бот
+        Telegram.WebApp.sendData(JSON.stringify({
+            result: winSector.type === "nft" ? "NFT" : winSector.value
+        }));
+
         // Установка таймера для закрытия окна выигрыша
         winModalTimeout = setTimeout(closeWinModal, 3000);
     }
@@ -215,11 +286,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Пересоздаем слоты для сброса позиции
         createSlots();
-        startIdleAnimation();
+        setTimeout(startIdleAnimation, 100);
 
         // Разблокировать кнопки после закрытия модального окна
         isModalOpen = false;
         spinBtn.disabled = false;
+        betButtons.forEach(btn => btn.disabled = false);
     }
 
     // Обработчик закрытия модального окна по клику
@@ -234,22 +306,22 @@ document.addEventListener('DOMContentLoaded', () => {
     function spinSlots() {
         if (isSpinning || isModalOpen) return;
 
-        if (coins < 100) {
+        if (coins < currentBet) {
             alert("Недостаточно звёзд!");
             return;
         }
 
         isSpinning = true;
         spinBtn.disabled = true;
+        betButtons.forEach(btn => btn.disabled = true);
 
         // Сбросить предыдущие стили
         resetAllSlots();
 
-        // Обновляем баланс
-        coins -= 100;
-        coinsCount.textContent = coins;
-
         stopIdleAnimation();
+
+        spinBtn.classList.add('vibrate');
+        setTimeout(() => spinBtn.classList.remove('vibrate'), 300);
 
         const containerRect = document.querySelector('.slots-container').getBoundingClientRect();
         const slotElement = document.querySelector('.slot');
@@ -261,7 +333,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Расчет конечной позиции
         const cycles = 15 + Math.floor(Math.random() * 5);
-        const sectorCount = sectors.length;
+        const sectorCount = sectors[currentBet].length;
         const winIndex = Math.floor(Math.random() * sectorCount);
         const targetPosition = (cycles * sectorCount + winIndex) * totalSlotWidth - (containerWidth / 2 - totalSlotWidth / 2);
 
@@ -269,7 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let startTime = null;
         const duration = 6000;
 
-        // Сохраняем начальную позицию
+        // Сохраняем начальную позицию (всегда 0)
         const startPosition = 0;
 
         slotsTrack.style.filter = "blur(3px)";
@@ -299,13 +371,23 @@ document.addEventListener('DOMContentLoaded', () => {
             // Обновляем позицию трека
             slotsTrack.style.transform = `translateX(-${newPosition}px)`;
 
+            // Эффект частиц во время вращения
+            if (Math.random() < 0.2 && progress < 0.95) {
+                createParticles(
+                    containerRect.left + containerWidth / 2,
+                    containerRect.top + containerRect.height / 2,
+                    5,
+                    '#ffd700'
+                );
+            }
+
             if (progress < 1) {
                 animationFrameId = requestAnimationFrame(animate);
             } else {
                 // Финализация позиции
                 slotsTrack.style.transform = `translateX(-${targetPosition}px)`;
 
-                // Точное вычисление выигрышного слота
+                // Точное вычисление выигрышного слота по индексу
                 const slotIndex = Math.floor((targetPosition + containerWidth / 2) / totalSlotWidth) % slotsTrack.children.length;
                 const centerSlot = slotsTrack.children[slotIndex];
 
@@ -333,15 +415,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 setTimeout(() => {
                     showWinModal(actualWinSector, centerSlot);
-
-                    // Отправляем результат в Telegram бот
-                    Telegram.WebApp.sendData(JSON.stringify({
-                        user_id: userId,
-                        username: username,
-                        result: actualWinSector.value,
-                        type: actualWinSector.type
-                    }));
-
                     isSpinning = false;
                 }, 1500);
             }
@@ -350,22 +423,5 @@ document.addEventListener('DOMContentLoaded', () => {
         animationFrameId = requestAnimationFrame(animate);
     }
 
-    // Инициализация приложения
-    function initApp() {
-        createSlots();
-
-        // Скрыть загрузчик и запустить анимацию
-        setTimeout(() => {
-            loader.style.display = 'none';
-            startIdleAnimation();
-        }, 800);
-
-        spinBtn.addEventListener('click', spinSlots);
-
-        // Инициализация Telegram Web App
-        Telegram.WebApp.ready();
-        Telegram.WebApp.expand();
-    }
-
-    initApp();
+    spinBtn.addEventListener('click', spinSlots);
 });

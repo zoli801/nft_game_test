@@ -4,10 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Элитная Слот-Рулетка Казино</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<div class="background-lights">
+    <div class="light-beam"></div>
+    <div class="light-beam"></div>
+    <div class="light-beam"></div>
+</div>
+
 <div class="loader" id="loader">
     <div class="loader-content">
         <div class="spinner"></div>
@@ -23,6 +28,8 @@
     </div>
 </div>
 
+<div class="particles" id="particles"></div>
+
 <div class="container">
     <header>
         <h1>🎰 ЭЛИТНАЯ РУЛЕТКА КАЗИНО</h1>
@@ -32,6 +39,16 @@
     <div class="coins-display">
         <div class="coins-icon">🪙</div>
         <div class="coins-amount">Ваши звёзды: <span id="coinsCount">0</span></div>
+    </div>
+
+    <div class="bet-selection">
+        <button class="bet-btn active" data-bet="100">100 🪙</button>
+        <button class="bet-btn" data-bet="1000">1000 🪙</button>
+        <button class="bet-btn" data-bet="10000">10000 🪙</button>
+    </div>
+
+    <div class="info">
+        <p>Призы: 15, 25, 50, 100 звёзд или NFT!</p>
     </div>
 
     <div class="slots-container">
@@ -44,7 +61,7 @@
         <div class="slots-track" id="slotsTrack"></div>
     </div>
 
-    <button class="spin-btn" id="spinBtn">🎡 КРУТИТЬ РУЛЕТКУ (100 🪙)</button>
+    <button class="spin-btn" id="spinBtn">🎡 КРУТИТЬ РУЛЕТКУ</button>
 
     <footer>
         <p>Удачи! Ваш выигрыш будет автоматически зачислен на баланс</p>
