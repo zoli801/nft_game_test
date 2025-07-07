@@ -36,40 +36,6 @@ body::before {
     100% { transform: rotate(360deg); }
 }
 
-.background-lights {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: -1;
-    overflow: hidden;
-}
-
-.light-beam {
-    position: absolute;
-    width: 200%;
-    height: 20px;
-    background: linear-gradient(90deg, transparent, rgba(186, 104, 200, 0.3), transparent);
-    transform: rotate(-45deg);
-    animation: beamMove 15s linear infinite;
-}
-
-.light-beam:nth-child(2) {
-    top: 30%;
-    animation-delay: -5s;
-}
-
-.light-beam:nth-child(3) {
-    top: 60%;
-    animation-delay: -10s;
-}
-
-@keyframes beamMove {
-    0% { left: -100%; }
-    100% { left: 100%; }
-}
-
 .container {
     max-width: 1000px;
     width: 100%;
@@ -118,19 +84,6 @@ h1 {
     letter-spacing: 1.5px;
 }
 
-.info {
-    background: rgba(74, 20, 140, 0.5);
-    padding: 20px;
-    border-radius: 15px;
-    margin-bottom: 25px;
-    width: 100%;
-    border: 2px solid #ffd700;
-    box-shadow: 0 0 20px rgba(156, 39, 176, 0.5);
-    position: relative;
-    overflow: hidden;
-    backdrop-filter: blur(5px);
-}
-
 .slots-container {
     position: relative;
     width: 100%;
@@ -168,12 +121,6 @@ h1 {
     position: absolute;
     left: 0;
     transition-timing-function: cubic-bezier(0.1, 0.8, 0.2, 1);
-    animation: idleSpin 60s linear infinite;
-}
-
-@keyframes idleSpin {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-50%); }
 }
 
 .slot {
@@ -273,7 +220,7 @@ footer {
 }
 
 .loader {
-    display: none;
+    display: flex;
     position: fixed;
     top: 0;
     left: 0;
@@ -374,7 +321,6 @@ footer {
     animation: vibrate 0.3s ease-in-out;
 }
 
-/* Модальное окно победы */
 .win-modal {
     display: none;
     position: fixed;
@@ -464,7 +410,6 @@ footer {
     color: white;
 }
 
-/* Адаптивные стили */
 @media (max-width: 768px) {
     h1 {
         font-size: 28px;
@@ -515,7 +460,7 @@ footer {
         font-size: 32px;
     }
 
-    .win-prize {
+    .win-p极e {
         font-size: 24px;
     }
 

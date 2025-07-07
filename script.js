@@ -15,14 +15,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const username = urlParams.get('username');
     const initialBalance = urlParams.get('balance');
 
-    // Текущая ставка
+    // Текущий баланс
     let coins = parseInt(initialBalance) || 0;
     let isSpinning = false;
     let isModalOpen = false;
-    let lastUsedNFTs = {};
+    let lastUsedNFTs = [];
     let winSlotElement = null;
     let animationFrameId = null;
     let winModalTimeout = null;
+    let idleAnimationId = null;
 
     // Обновляем отображение баланса
     coinsCount.textContent = coins;
@@ -47,41 +48,21 @@ document.addEventListener('DOMContentLoaded', () => {
         { value: "100", type: "coins" },
         { value: "NFT", type: "nft" },
         { value: "NFT", type: "nft" },
-        { value: "NFT", type: "nft" }
+        { value: "NFT", type: "n极" }
     ];
-
-    // Показать загрузчик
-    loader.style.display = 'flex';
-
-    // Функция для перемешивания массива
-    function shuffleArray(array) {
-        for (let i = array.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [array[i], array[j]] = [array[j], array[i]];
-        }
-        return array;
-    }
 
     // Создать рулетку
     function createSlots() {
         slotsTrack.innerHTML = '';
 
         // Создаем копию секторов и перемешиваем их
-        const shuffledSectors = shuffleArray([...sectors]);
+        const shuffledSectors = [...sectors].sort(() => Math.random() - 0.5);
         const slotSets = 40;
-
-        if (!lastUsedNFTs) {
-            lastUsedNFTs = [];
-        }
 
         for (let i = 0; i < slotSets; i++) {
             shuffledSectors.forEach((sector, sectorIndex) => {
                 const slot = document.createElement('div');
                 slot.className = 'slot';
-                slot.dataset.index = sectorIndex;
-                slot.dataset.set = i;
-
-                // Сохраняем данные сектора
                 slot.dataset.value = sector.value;
                 slot.dataset.type = sector.type;
 
@@ -125,15 +106,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Запустить фоновое вращение
     function startIdleAnimation() {
-        slotsTrack.style.animation = 'none';
-        setTimeout(() => {
-            slotsTrack.style.animation = 'idleSpin 60s linear infinite';
-        }, 10);
+        let start = null;
+        const duration = 60000; // 60 секунд
+        const distance = slotsTrack.scrollWidth / 2;
+
+        function step(timestamp) {
+            if (!start) start = timestamp;
+            const progress = timestamp - start;
+            const percent = Math.min(progress / duration, 1);
+            const newPosition = percent * distance;
+
+            slotsTrack.style.transform = `translateX(-${newPosition}px)`;
+
+            if (percent < 1) {
+                idleAnimationId = requestAnimationFrame(step);
+            } else {
+                // Перезапускаем анимацию
+                startIdleAnimation();
+            }
+        }
+
+        idleAnimationId = requestAnimationFrame(step);
     }
 
     // Остановить фоновое вращение
     function stopIdleAnimation() {
-        slotsTrack.style.animation = 'none';
+        if (idleAnimationId) {
+            cancelAnimationFrame(idleAnimationId);
+            idleAnimationId = null;
+        }
     }
 
     // Сбросить стили всех слотов
@@ -152,15 +153,6 @@ document.addEventListener('DOMContentLoaded', () => {
             winSlotElement = null;
         }
     }
-
-    // Инициализация рулетки
-    createSlots();
-
-    // Скрыть загрузчик
-    setTimeout(() => {
-        loader.style.display = 'none';
-        startIdleAnimation();
-    }, 800);
 
     // Создать эффект частиц
     function createParticles(x, y, count, color) {
@@ -223,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Пересоздаем слоты для сброса позиции
         createSlots();
-        setTimeout(startIdleAnimation, 100);
+        startIdleAnimation();
 
         // Разблокировать кнопки после закрытия модального окна
         isModalOpen = false;
@@ -258,9 +250,6 @@ document.addEventListener('DOMContentLoaded', () => {
         coinsCount.textContent = coins;
 
         stopIdleAnimation();
-
-        spinBtn.classList.add('vibrate');
-        setTimeout(() => spinBtn.classList.remove('vibrate'), 300);
 
         const containerRect = document.querySelector('.slots-container').getBoundingClientRect();
         const slotElement = document.querySelector('.slot');
@@ -310,23 +299,13 @@ document.addEventListener('DOMContentLoaded', () => {
             // Обновляем позицию трека
             slotsTrack.style.transform = `translateX(-${newPosition}px)`;
 
-            // Эффект частиц во время вращения
-            if (Math.random() < 0.2 && progress < 0.95) {
-                createParticles(
-                    containerRect.left + containerWidth / 2,
-                    containerRect.top + containerRect.height / 2,
-                    5,
-                    '#ffd700'
-                );
-            }
-
             if (progress < 1) {
                 animationFrameId = requestAnimationFrame(animate);
             } else {
                 // Финализация позиции
                 slotsTrack.style.transform = `translateX(-${targetPosition}px)`;
 
-                // Точное вычисление выигрышного слота по индексу
+                // Точное вычисление выигрышного слота
                 const slotIndex = Math.floor((targetPosition + containerWidth / 2) / totalSlotWidth) % slotsTrack.children.length;
                 const centerSlot = slotsTrack.children[slotIndex];
 
@@ -371,9 +350,22 @@ document.addEventListener('DOMContentLoaded', () => {
         animationFrameId = requestAnimationFrame(animate);
     }
 
-    spinBtn.addEventListener('click', spinSlots);
+    // Инициализация приложения
+    function initApp() {
+        createSlots();
 
-    // Инициализация Telegram Web App
-    Telegram.WebApp.ready();
-    Telegram.WebApp.expand();
+        // Скрыть загрузчик и запустить анимацию
+        setTimeout(() => {
+            loader.style.display = 'none';
+            startIdleAnimation();
+        }, 800);
+
+        spinBtn.addEventListener('click', spinSlots);
+
+        // Инициализация Telegram Web App
+        Telegram.WebApp.ready();
+        Telegram.WebApp.expand();
+    }
+
+    initApp();
 });
